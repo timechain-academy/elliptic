@@ -8,9 +8,10 @@ import logging
 
 from cryptography.fernet import Fernet, InvalidToken
 import base64
-import json
+# import json
 
 from cryptography.hazmat.primitives import hashes
+from ecc import Point, FieldElement
 
 
 logging.basicConfig(filename='elliptic.log',
@@ -21,13 +22,12 @@ logging.basicConfig(filename='elliptic.log',
 
 sys.path.append('../programmingbitcoin/code-ch03/')
 
-from ecc import Point, FieldElement
-
 
 def get_primes(n):
     from itertools import count, islice
     primes = (n for n in count(2) if all(n % d for d in range(2, n)))
     return islice(primes, 0, n)
+
 
 primes_ = list(get_primes(100))
 
@@ -35,10 +35,12 @@ primes_ = list(get_primes(100))
 def update_p_slider_label(p_i):
     return str(primes_[p_i])
 
+
 def elliptic(p, a, b):
     x = y = np.arange(p)
     xx, yy = np.meshgrid(x,y)
-    return (((yy**2)%p - ((xx**3)%p+(a*xx)%p+b)%p) == 0)*1.0
+    return (((yy**2) % p - ((xx**3) % p+(a*xx) % p+b) % p) == 0)*1.0
+
 
 def sign_str(a, unity=True):
     if a > 0:
@@ -60,6 +62,7 @@ def sign_str(a, unity=True):
     else:
         return ''
 
+
 def get_eqn_str(p, a, b):
     """F_p: y^2 = x^3 + ax + b"""
     if a == 0:
@@ -77,6 +80,7 @@ def array_to_str(arr):
             else:
                 result.append('')
     return np.array(result).reshape(arr.shape)
+
 
 def get_p_size(p_i, index_mid=11, size_min=1, size_mid=15, size_max=30):
     """scale to size_mid when p_i = index_mid"""
@@ -104,8 +108,10 @@ def get_pnt_annotation(x, y, text):
         bgcolor="#ff7f0e",
         opacity=0.8)
 
+
 def point_str(x, y):
     return "({},{})".format(x,y)
+
 
 def show_hide_pub(mode):
     # show the pub key
@@ -114,15 +120,17 @@ def show_hide_pub(mode):
     else:
         return dict(display='none')
 
+
 def show_hide_secret(mode):
-    # show the secret key 
+    # show the secret key
     if mode == 2:
         return dict(display='block')
     else:
         return dict(display='none')
 
+
 def show_hide_message(mode):
-    # show the secret key 
+    # show the secret key
     if mode == 3:
         return dict(display='block')
     else:
@@ -146,18 +154,17 @@ def multiply_graph(p_i, a, b, n, points, *args):
     if 'multiply' in ctx.outputs_list['id']:
         active_tab = 'point-multiplication'
 
-
     p = primes_[p_i]
     curve = elliptic(p, a, b)
 
     fig = go.Figure(
             data=go.Heatmap(z=curve,
-                showscale=False,
-                colorscale='gray',
-                hoverinfo = 'text',
-                text = array_to_str(curve),
-                ),
-            )
+                            showscale=False,
+                            colorscale='gray',
+                            hoverinfo='text',
+                            text=array_to_str(curve),
+                            ),
+    )
 
     title_str = ''
 
@@ -178,18 +185,18 @@ def multiply_graph(p_i, a, b, n, points, *args):
         title_str += f"\quad N:{order_}"
 
     if points is not None:
-        curve_key = str((p,a,b))
+        curve_key = str((p, a, b))
         if curve_key in points:
             pts = points[curve_key]
             if len(pts) > 0:
                 x_0, y_0 = pts[0]
                 base_point = go.Scatter(x=[x_0], y=[y_0],
-                    text=[],
-                    marker_symbol='square',
-                    marker=dict(size=get_p_size(p_i)),
-                    hoverinfo='skip',
-                    mode='markers',
-                    showlegend=False,)
+                                        text=[],
+                                        marker_symbol='square',
+                                        marker=dict(size=get_p_size(p_i)),
+                                        hoverinfo='skip',
+                                        mode='markers',
+                                        showlegend=False,)
                 fig.add_trace(base_point)
                 if active_tab == 'point-multiplication':
                     title_str += '\qquad {} \cdot {}'.format(str(n), str((x_0, y_0)))
@@ -248,7 +255,7 @@ def extended_gcd(aa, bb):
         x, lastx = lastx - quotient*x, x
         y, lasty = lasty - quotient*y, y
     return lastremainder, lastx * (-1 if aa < 0 else 1), lasty * (-1 if bb < 0 else 1)
- 
+
 def modinv(a, m):
     # from https://rosettacode.org/wiki/Modular_inverse#Python
     if m not in primes_:
@@ -450,7 +457,7 @@ def add_graph(p_i, a, b, points):
             # print(curve_key, 'not in point store')
             pass
 
-    
+
     fig.update_layout(dict(width=700, height=700,
                 xaxis=dict(range=[0,p-1]),
                 yaxis=dict(range=[0,p-1]),
@@ -467,7 +474,7 @@ def update_multiply_inverse_points(p_i, a, b, n, clickData, mode, store):
     logging.debug('mode :{}'.format(mode))
 
     curve_key = str((p, a, b, mode))
-    
+
     if store is not None:
         if curve_key in store:
             points = [tuple(v) for v in store[curve_key]]
@@ -499,7 +506,7 @@ def update_multiply_inverse_points(p_i, a, b, n, clickData, mode, store):
             points.append((p_n.x.num, p_n.y.num))
         else:
             points.append((-1, -1))
-        
+
     store[curve_key] = points
     return store
 
@@ -535,7 +542,7 @@ def update_multiply_points(p_i, a, b, n, clickData, store):
             points.append((p_n.x.num, p_n.y.num))
         else:
             points.append((-1, -1))
-        
+
     store[curve_key] = points
     return store
 
@@ -553,7 +560,7 @@ def update_add_points(p_i, a, b, clickData, store):
     else:
         points = []
         store = {curve_key: points}
-    
+
     if clickData is not None:
         new_points = [(p_['x'], p_['y']) for p_ in clickData['points']]
         for p_ in new_points:
@@ -567,7 +574,7 @@ def update_add_points(p_i, a, b, clickData, store):
                 # add point to itself
                 point_in_curve(p_[0], p_[1], p, a, b)
                 points.append(p_)
-                
+
     store[curve_key] = points[-2:] # keep the last two points
 
     return store
@@ -627,7 +634,7 @@ def subgroup_order(P):
     b = P.b.num
 
     N = order(p, a, b)
-    
+
     for _ in divisors(N):
         P_ = _*P
         if P_.x is None:
@@ -722,19 +729,23 @@ def update_crypto_buttons(key):
     else:
         return 'primary', 'primary'
 
+
 def sha256(message):
     digest = hashes.Hash(hashes.SHA256())
     digest.update(message.encode())
-    digest.update(b"123")
+    #  digest.update(b"123")
     return digest.finalize()
+
 
 def get_z(message, size_):
     z = int.from_bytes(sha256(message)[:size_], "big")
     return z
 
+
 def get_s(k, z, r, d_a, n):
     k_inv = modinv(k, n)
     return (k_inv*((z%n + (r*d_a)%n)%n))%n
+
 
 def render_sign_params(p_i, a, b, priv_key, k, pub_points, secret_points, message):
     p = primes_[p_i]
